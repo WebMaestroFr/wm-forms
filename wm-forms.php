@@ -16,6 +16,8 @@ class WM_Forms
 	public static function init()
 	{
 		self::register_post_type();
+		register_activation_hook( __FILE__, array( __CLASS__, 'activation' ) );
+		register_deactivation_hook( __FILE__, array( __CLASS__, 'deactivation' ) );
     add_action( 'admin_enqueue_scripts', array( __CLASS__, 'admin_enqueue_scripts' ) );
     add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ) );
 		add_action( 'pre_get_posts', array( __CLASS__, 'pre_get_posts' ) );
@@ -25,6 +27,24 @@ class WM_Forms
     add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_scripts' ) );
     add_filter( 'the_content', array( __CLASS__, 'the_content' ) );
 		add_filter( 'wp_dropdown_pages', array( __CLASS__, 'dropdown_pages' ) );
+	}
+
+	public static function activation() {
+		global $wpdb;
+    $wpdb->query( "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}form_results` (
+      `ID`  bigint(20) NOT NULL AUTO_INCREMENT,
+			`form_id` bigint(20) NOT NULL,
+			`value` longtext,
+      `date` datetime DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY `ID` (`ID`),
+			KEY `form_id` (`form_id`)
+    );" );
+	}
+
+	public static function deactivation() {
+		global $wpdb;
+		// TODO : Ask for backup
+    $wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}form_results`;" );
 	}
 
 	public static function register_post_type()
@@ -134,6 +154,7 @@ class WM_Forms
 		}
 		$select .= "</select></form>";
 		$fields = json_decode( get_post_meta( $form_id, 'form_fields', true ), true );
+		$results = wm_get_form_results( $form_id );
 ?>
     <div class="wrap">
       <?php echo $select; ?><h2><?php _e( 'Form Results', 'wm_forms' ); ?></h2>
@@ -141,14 +162,24 @@ class WM_Forms
       <table class="widefat fixed" cellspacing="0">
         <thead>
           <tr>
-            <th scope="col" id="cb" class="manage-column column-cb check-column">
-            	<label class="screen-reader-text" for="cb-select-all-1">Select All</label>
-            	<input id="cb-select-all-1" type="checkbox">
+            <th class="manage-column column-cb check-column">
+            	<label class="screen-reader-text" for="select-all">Select All</label>
+            	<input id="select-all" type="checkbox">
             </th>
             <?php foreach ( $fields as $field ) {
             	echo "<th scope='col' class='manage-column'>{$field['label']}</th>";
             } ?>
           </tr>
+					<?php foreach ( $results as $result ) { ?>
+						<tr>
+            	<td>
+            		<input type="checkbox">
+            	</td>
+							<?php foreach ( $fields as $field ) {
+            		echo "<td>{$result->value[$field['fid']]}</td>";
+            	} ?>
+						</tr>
+					<?php } ?>
         </thead>
       </table>
     </div>
@@ -186,27 +217,38 @@ class WM_Forms
 		$fields = wm_get_form_fields( $post->ID );
 		$results = array();
 		foreach ( $fields as $name => $field ) {
+			$key = "{$field['fid']}";
 			switch ( $field['type'] )
       {
     		case 'checkbox':
-					$results[] = ! empty( $_POST[$name] );
+					$results[$key] = ! empty( $_POST[$name] );
     		  break;
 
   			case 'radio':
   			case 'select':
-					$results[] = sanitize_key( $_POST[$name] );
+					$results[$key] = sanitize_key( $_POST[$name] );
     		  break;
 
   			case 'email':
-					$results[] = sanitize_email( $_POST[$name] );
+					$results[$key] = sanitize_email( $_POST[$name] );
     		  break;
 
   			default:
-					$results[] = sanitize_text_field( $_POST[$name] );
+					$results[$key] = sanitize_text_field( $_POST[$name] );
   			  break;
   		}
 		}
-		wp_send_json( $results );
+		if ( $results ) {
+			global $wpdb;
+			if ( $wpdb->insert( $wpdb->prefix . 'form_results', array(
+					'form_id' => $post->ID,
+					'value' => json_encode($results)
+				) ) ) {
+					wp_send_json( $wpdb->insert_id );
+			} else {
+				wp_send_json( 'Error.' );
+			}
+		}
 	}
 
   public static function enqueue_scripts()
@@ -317,4 +359,13 @@ function wm_get_form_fields( $post_id ) {
 		$fields["{$post->post_name}-{$field['fid']}"] = $field;
 	}
 	return $fields;
+}
+
+function wm_get_form_results( $post_id ) {
+	global $wpdb;
+	$results = $wpdb->get_results( "SELECT `id`, `value`, `date` FROM `{$wpdb->prefix}form_results` WHERE `form_id` = {$post_id};" );
+	foreach ( $results as $result ) {
+		$result->value = json_decode( $result->value, true );
+	}
+	return $results;
 }
