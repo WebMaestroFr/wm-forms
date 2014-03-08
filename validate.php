@@ -20,7 +20,7 @@ class WM_Forms_Validate
   {
     $post = get_post( $_POST['wm_form_id'] );
     if ( ! wp_verify_nonce( $_POST[$post->post_name . '_nonce'], $post->post_name ) ) {
-      wp_die( __( 'Security verification failed.', 'wm_forms' ) );
+      wp_die( __( 'Security verification failed.', 'wm-forms' ) );
     }
     $fields = wm_get_form_fields( $post->ID );
     $results = array();

@@ -18,7 +18,7 @@ class WM_Form_Results
 
   public static function admin_menu()
   {
-    add_submenu_page( 'edit.php?post_type=form', __( 'Form Results', 'wm_forms' ), __( 'Results', 'wm_forms' ), 'manage_options', 'results', array( __CLASS__, 'do_results_page' ) );
+    add_submenu_page( 'edit.php?post_type=form', __( 'Form Results', 'wm-forms' ), __( 'Results', 'wm-forms' ), 'manage_options', 'results', array( __CLASS__, 'do_results_page' ) );
   }
 
   public static function do_results_page()
@@ -27,7 +27,7 @@ class WM_Form_Results
       $form_id = self::form_results_selector(); // Print the <select> and return the current form ID
       $fields = json_decode( get_post_meta( $form_id, 'form_fields', true ), true );
       $results = wm_get_form_results( $form_id ); ?>
-      <h2><?php _e( 'Form Results', 'wm_forms' ); ?></h2>
+      <h2><?php _e( 'Form Results', 'wm-forms' ); ?></h2>
       <!-- <div class="tablenav top"></div> -->
       <table class="widefat fixed" cellspacing="0">
         <thead>
