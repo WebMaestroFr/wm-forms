@@ -4,7 +4,16 @@ class WM_Form_Results
 {
 	public static function init()
 	{
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'admin_enqueue_scripts' ) );
 		add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ) );
+	}
+
+	public static function admin_enqueue_scripts( $hook_suffix )
+	{
+		if ( $hook_suffix === 'form_page_results' ) {
+			wp_enqueue_style( 'wm-forms-results', plugins_url( 'css/wm-forms-results.css' , __FILE__ ) );
+			wp_enqueue_script( 'wm-forms-results', plugins_url( 'js/wm-forms-results.js' , __FILE__ ), array( 'jquery' ) );
+		}
 	}
 
 	public static function admin_menu()
@@ -52,7 +61,7 @@ class WM_Form_Results
 			'post_type'		=> 'form',
 			'numberposts'	=> -1
 		) );
-		echo "<form style='float: left; margin: 9px 8px 4px 0;' method='get' class='wm-form-results'>
+		echo "<form method='get' class='wm-form-results-selector'>
 		<input type='hidden' name='post_type' value='form'>
 		<input type='hidden' name='page' value='results'>
 		<select name='form_id'>";

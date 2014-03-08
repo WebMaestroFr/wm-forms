@@ -8,12 +8,37 @@ Description: Forms Post Type Manager
 Version: 1.0
 License: GNU General Public License
 License URI: license.txt
-Text Domain: wm_forms
+Text Domain: wm-forms
 */
 
 include( plugin_dir_path( __FILE__ ) . 'forms.php' );
 include( plugin_dir_path( __FILE__ ) . 'results.php' );
 include( plugin_dir_path( __FILE__ ) . 'validate.php' );
+
+function wm_get_forms( $args = array() ) {
+	return get_posts( array_merge( $args, array( 'post_type' => 'form' ) ) );
+}
+
+function wm_get_form_fields( $post_id ) {
+	$post = get_post( $post_id );
+	$meta = json_decode( get_post_meta( $post_id, 'form_fields', true ), true );
+	$fields = array();
+	foreach ( $meta as $field ) {
+		$fields["{$post->post_name}-{$field['fid']}"] = $field;
+	}
+	return $fields;
+}
+
+function wm_get_form_results( $post_id ) {
+	global $wpdb;
+	$results = $wpdb->get_results(
+		$wpdb->prepare( "SELECT `id`, `value`, `date` FROM `{$wpdb->prefix}form_results` WHERE `form_id` = %d;", $post_id )
+	);
+	foreach ( $results as $result ) {
+		$result->value = json_decode( $result->value, true );
+	}
+	return $results;
+}
 
 class WM_Forms_Plugin
 {
@@ -31,47 +56,43 @@ class WM_Forms_Plugin
 	public static function activation()
 	{
 		global $wpdb;
-		$wpdb->query( "
-			CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}form_results` (
-				`ID`  bigint(20) NOT NULL AUTO_INCREMENT,
-				`form_id` bigint(20) NOT NULL,
-				`value` longtext,
-				`date` datetime DEFAULT CURRENT_TIMESTAMP,
-				PRIMARY KEY `ID` (`ID`),
-				KEY `form_id` (`form_id`)
-			);
-		" );
+		$wpdb->query( "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}form_results` (
+			`ID`  bigint(20) NOT NULL AUTO_INCREMENT,
+			`form_id` bigint(20) NOT NULL,
+			`value` longtext,
+			`date` datetime DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY `ID` (`ID`),
+			KEY `form_id` (`form_id`)
+		);" );
 	}
 
 	public static function deactivation()
 	{
 		global $wpdb;
 		// TODO : Ask for backup
-		$wpdb->query( "
-			DROP TABLE IF EXISTS `{$wpdb->prefix}form_results`;
-		" );
+		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}form_results`;" );
 	}
 
 	public static function register_post_type()
 	{
 		$labels = array(
-			'name'                => __( 'Forms', 'wm_forms' ),
-			'singular_name'       => __( 'Form', 'wm_forms' ),
-			'menu_name'           => __( 'Forms', 'wm_forms' ),
-			'parent_item_colon'   => __( 'Parent Form', 'wm_forms' ),
-			'all_items'           => __( 'All Forms', 'wm_forms' ),
-			'view_item'           => __( 'View Form', 'wm_forms' ),
-			'add_new_item'        => __( 'Add New Form', 'wm_forms' ),
-			'add_new'             => __( 'Add New', 'wm_forms' ),
-			'edit_item'           => __( 'Edit Form', 'wm_forms' ),
-			'update_item'         => __( 'Update Form', 'wm_forms' ),
-			'search_items'        => __( 'Search Form', 'wm_forms' ),
-			'not_found'           => __( 'Not forms found', 'wm_forms' ),
-			'not_found_in_trash'  => __( 'Not forms found in Trash', 'wm_forms' ),
+			'name'                => __( 'Forms', 'wm-forms' ),
+			'singular_name'       => __( 'Form', 'wm-forms' ),
+			'menu_name'           => __( 'Forms', 'wm-forms' ),
+			'parent_item_colon'   => __( 'Parent Form', 'wm-forms' ),
+			'all_items'           => __( 'All Forms', 'wm-forms' ),
+			'view_item'           => __( 'View Form', 'wm-forms' ),
+			'add_new_item'        => __( 'Add New Form', 'wm-forms' ),
+			'add_new'             => __( 'Add New', 'wm-forms' ),
+			'edit_item'           => __( 'Edit Form', 'wm-forms' ),
+			'update_item'         => __( 'Update Form', 'wm-forms' ),
+			'search_items'        => __( 'Search Form', 'wm-forms' ),
+			'not_found'           => __( 'Not forms found', 'wm-forms' ),
+			'not_found_in_trash'  => __( 'Not forms found in Trash', 'wm-forms' ),
 		);
 		$args = array(
-			'label'              	=> __( 'form', 'wm_forms' ),
-			'description'        	=> __( 'Form to gather user informations.', 'wm_forms' ),
+			'label'              	=> __( 'form', 'wm-forms' ),
+			'description'        	=> __( 'Form to gather user informations.', 'wm-forms' ),
 			'labels'             	=> $labels,
 			'supports'        	   => array( 'title', 'thumbnail', 'excerpt' ),
 			'public'             	=> true,
@@ -80,21 +101,23 @@ class WM_Forms_Plugin
 			'has_archive'        	=> true,
 			'capability_type'    	=> 'page',
 			'register_meta_box_cb' => array( __CLASS__, 'register_meta_box' ),
-			'rewrite'							=> array( 'slug' => __( 'form', 'wm_forms' ) )
+			'rewrite'							=> array( 'slug' => __( 'form', 'wm-forms' ) )
 		);
 		register_post_type( 'form', $args );
 	}
 
 	public static function admin_enqueue_scripts( $hook_suffix )
 	{
-		wp_enqueue_style( 'wm-forms', plugins_url( 'wm-forms.css' , __FILE__ ) );
-		wp_enqueue_script( 'wm-forms', plugins_url( 'js/wm-forms.js' , __FILE__ ), array( 'jquery', 'underscore' ) );
+		if ( get_post_type() === 'form' && ( $hook_suffix === 'post-new.php' || $hook_suffix === 'post.php' ) ) {
+			wp_enqueue_style( 'wm-forms', plugins_url( 'css/wm-forms.css' , __FILE__ ) );
+			wp_enqueue_script( 'wm-forms', plugins_url( 'js/wm-forms.js' , __FILE__ ), array( 'jquery', 'underscore' ) );
+		}
 	}
 
 	public static function register_meta_box()
 	{
-		add_meta_box( 'wm-form-fields', __( 'Fields', 'wm_forms' ), array( __CLASS__, 'meta_box_fields' ), 'form', 'normal' );
-		add_meta_box( 'wm-form-settings', __( 'Settings', 'wm_forms' ), array( __CLASS__, 'meta_box_settings' ), 'form', 'side', 'core' );
+		add_meta_box( 'wm-form-fields', __( 'Fields', 'wm-forms' ), array( __CLASS__, 'meta_box_fields' ), 'form', 'normal' );
+		add_meta_box( 'wm-form-settings', __( 'Settings', 'wm-forms' ), array( __CLASS__, 'meta_box_settings' ), 'form', 'side', 'core' );
 	}
 
 	public static function meta_box_fields( $post, $metabox )
@@ -106,7 +129,7 @@ class WM_Forms_Plugin
 			echo absint( get_post_meta( $post->ID, 'form_fields_increment', true ) );
 		?>">
 		<div class="wm-form-fields-list"></div>
-		<button class="button button-large right wm-form-add-field"><?php _e( 'Add Field', 'wm_forms' ); ?></button>
+		<button class="button button-large right wm-form-add-field"><?php _e( 'Add Field', 'wm-forms' ); ?></button>
 		<script type="text/template" class="wm-form-field-template"><?php
 			include( plugin_dir_path( __FILE__ ) . 'tpl/field.php' );
 		?></script>
@@ -121,13 +144,17 @@ class WM_Forms_Plugin
 		<div class="misc-pub-section">
 			<label>
 				<input type="checkbox" <?php checked( isset( $value['send'] ) ); ?> value="1" name="wm_form_settings[send]">
-				<?php _e( 'Send results by email to', 'wm_forms' ); ?>
+				<?php _e( 'Send results by email to', 'wm-forms' ); ?>
 			</label>
-			<input type="email" name="wm_form_settings[email]" value="<?php echo ( isset( $value['email'] ) && is_email( $value['email'] ) ) ? $value['email'] : $current_user->user_email; ?>" style="padding: 1px 3px; font-size: 12px;">
+			<input type="email" name="wm_form_settings[email]" value="<?php
+				echo ( isset( $value['email'] ) && is_email( $value['email'] ) ) ? $value['email'] : $current_user->user_email;
+			?>" id="wm-form-settings-email">
 		</div>
 		<div class="misc-pub-section">
 			<label>Submit Text</label>
-			<input type="text"  name="wm_form_settings[submit]"class="widefat" value="<?php echo ( isset( $value['submit'] ) ) ? $value['submit'] : $post->post_title; ?>">
+			<input type="text" name="wm_form_settings[submit]" class="widefat" value="<?php
+				echo ( isset( $value['submit'] ) ) ? $value['submit'] : __( 'Submit', 'wm-forms' );
+			?>">
 		</div>
 	<?php }
 
@@ -166,7 +193,7 @@ class WM_Forms_Plugin
 			'show_option_no_change' => '',
 			'option_none_value'     => ''
 		) );
-		return str_replace( '</select>', '<optgroup label="' . __( 'Forms', 'wm_forms' ) . '">' . $options . '</optgroup></select>', $select );
+		return str_replace( '</select>', '<optgroup label="' . __( 'Forms', 'wm-forms' ) . '">' . $options . '</optgroup></select>', $select );
 	}
 
 	public static function pre_get_posts( $query )
@@ -179,26 +206,3 @@ class WM_Forms_Plugin
 	}
 }
 add_action( 'init', array( WM_Forms_Plugin, 'init' ) );
-
-function wm_get_forms( $args = array() ) {
-	return get_posts( array_merge( $args, array( 'post_type' => 'form' ) ) );
-}
-
-function wm_get_form_fields( $post_id ) {
-	$post = get_post( $post_id );
-	$meta = json_decode( get_post_meta( $post_id, 'form_fields', true ), true );
-	$fields = array();
-	foreach ( $meta as $field ) {
-		$fields["{$post->post_name}-{$field['fid']}"] = $field;
-	}
-	return $fields;
-}
-
-function wm_get_form_results( $post_id ) {
-	global $wpdb;
-	$results = $wpdb->get_results( "SELECT `id`, `value`, `date` FROM `{$wpdb->prefix}form_results` WHERE `form_id` = {$post_id};" );
-	foreach ( $results as $result ) {
-		$result->value = json_decode( $result->value, true );
-	}
-	return $results;
-}

@@ -100,3 +100,7 @@
 	outline: none;
 	margin-top: 6px;
 }
+#wm-form-settings-email {
+	padding: 1px 3px;
+	font-size: 12px;
+}

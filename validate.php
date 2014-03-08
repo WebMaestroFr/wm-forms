@@ -25,7 +25,7 @@ class WM_Forms_Validate
 		$fields = wm_get_form_fields( $post->ID );
 		$results = array();
 		foreach ( $fields as $name => $field ) {
-			$key = "{$field['fid']}";
+			$key = sanitize_key( $field['fid'] );
 			switch ( $field['type'] )
 			{
 				case 'checkbox':
