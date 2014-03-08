@@ -1,6 +1,6 @@
 jQuery(document).ready(function ($) {
     'use strict';
-    if (!$('body').hasClass('post-type-wm_form')) { return; }
+    if (!$('body').hasClass('post-type-form')) { return; }
     var box = $('#wm-form-fields'),
       results = $('.wm-form-results');
     if ( box.length === 1 ) {
