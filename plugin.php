@@ -34,8 +34,32 @@ function wm_get_form_results( $post_id ) {
   $results = $wpdb->get_results(
     $wpdb->prepare( "SELECT `id`, `value`, `date` FROM `{$wpdb->prefix}form_results` WHERE `form_id` = %d;", $post_id )
   );
+  $fields = json_decode( get_post_meta( $form_id, 'form_fields', true ), true );
   foreach ( $results as $result ) {
     $result->value = json_decode( $result->value, true );
+    foreach ( $fields as $field ) {
+      $value = $result->value[$field['fid']];
+      switch ($field['type'])
+      {
+        case 'checkbox':
+      		$value = $value ? __( 'Yes', 'wm-forms' ) : __( 'No', 'wm-forms' );
+      		break;
+
+        case 'radio':
+        case 'select':
+          $value = $field['options'][$value];
+        	break;
+
+        case 'email':
+          $value = "<a href='mailto:{$value}'>{$value}</a>";
+        	break;
+
+        case 'url':
+          $value = "<a href='{$value}'>{$value}</a>";
+        	break;
+      }
+      $result->value[$field['fid']] = $value;
+    }
   }
   return $results;
 }
@@ -109,8 +133,13 @@ class WM_Forms_Plugin
   public static function admin_enqueue_scripts( $hook_suffix )
   {
     if ( get_post_type() === 'form' && ( $hook_suffix === 'post-new.php' || $hook_suffix === 'post.php' ) ) {
+      if ( ! class_exists( WM_Settings ) ) {
+        add_action( 'admin_notices', function () {
+          echo '<div class="error"><p>' . __( 'The plugin <strong>Less Compiler</strong> requires the plugin <strong><a href="https://github.com/WebMaestroFr/wm-settings">WebMaestro Settings</a></strong> in order to display the options pages.', 'wm-forms' ) . '</p></div>';
+        });
+      }
       wp_enqueue_style( 'wm-forms', plugins_url( 'css/wm-forms.css' , __FILE__ ) );
-      wp_enqueue_script( 'wm-forms', plugins_url( 'js/wm-forms.js' , __FILE__ ), array( 'jquery', 'underscore' ) );
+      wp_enqueue_script( 'wm-forms', plugins_url( 'js/wm-forms.js' , __FILE__ ), array( 'jquery', 'jquery-ui-sortable', 'underscore' ) );
     }
   }
 
@@ -131,7 +160,7 @@ class WM_Forms_Plugin
     <div class="wm-form-fields-list"></div>
     <button class="button button-large right wm-form-add-field"><?php _e( 'Add Field', 'wm-forms' ); ?></button>
     <script type="text/template" class="wm-form-field-template"><?php
-      include( plugin_dir_path( __FILE__ ) . 'tpl/field.php' );
+      include( plugin_dir_path( __FILE__ ) . 'tpl/field.tpl' );
     ?></script>
   <?php }
 

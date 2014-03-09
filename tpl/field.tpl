@@ -2,7 +2,7 @@
   <dt>
     <span class="item-title"><%= label %></span>
     <span class="item-controls">
-      <span class="item-type"><%= type.charAt(0).toUpperCase() + type.slice(1) %></span>
+      <span class="item-type"><%= type %></span>
       <a class="item-edit" href="#"></a>
     </span>
   </dt>
@@ -28,6 +28,7 @@
           <option value="select"<% if (type === 'select') { %> selected<% } %>><?php _e( 'Select', 'wm-forms' ); ?></option>
           <option value="textarea"<% if (type === 'textarea') { %> selected<% } %>><?php _e( 'Textarea', 'wm-forms' ); ?></option>
           <option value="email"<% if (type === 'email') { %> selected<% } %>><?php _e( 'Email', 'wm-forms' ); ?></option>
+          <option value="url"<% if (type === 'url') { %> selected<% } %>><?php _e( 'URL', 'wm-forms' ); ?></option>
         </select>
       </label>
     </p>

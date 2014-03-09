@@ -46,7 +46,27 @@ class WM_Form_Results
                 <input type="checkbox">
               </td>
               <?php foreach ( $fields as $field ) {
-                echo "<td>{$result->value[$field['fid']]}</td>";
+                $value = $result->value[$field['fid']];
+                switch ($field['type'])
+                {
+                  case 'checkbox':
+                		$value = $value ? __( 'Yes', 'wm-forms' ) : __( 'No', 'wm-forms' );
+                		break;
+
+                  case 'radio':
+                  case 'select':
+                    $value = $field['options'][$value];
+                  	break;
+
+                  case 'email':
+                    $value = "<a href='mailto:{$value}'>{$value}</a>";
+                  	break;
+
+                  case 'url':
+                    $value = "<a href='{$value}'>{$value}</a>";
+                  	break;
+                }
+                echo "<td>{$value}</td>";
               } ?>
             </tr>
           <?php } ?>

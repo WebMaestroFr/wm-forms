@@ -17,8 +17,13 @@ jQuery(document).ready(function ($) {
             $('ol', item).append($(optTemplate({ opt: data.options[i] })));
         }
         toggleOptions(item, data.type);
-        $('.wm-form-field-type').change(function () {
-            toggleOptions(item, $(this).val());
+        $('.wm-form-field-label', item).on('input', function () {
+            $('.item-title', item).text($(this).val());
+        });
+        $('.wm-form-field-type', item).change(function () {
+          var type = $(this).val();
+          toggleOptions(item, type);
+          $('.item-type', item).text(type);
         });
         $('.item-edit', item).click(function (e) {
             e.preventDefault();
@@ -48,7 +53,7 @@ jQuery(document).ready(function ($) {
     e.preventDefault();
     addFieldItem({
         fid: fid,
-        label: 'Label',
+        label: '',
         type: 'text',
         required: 0,
         options: []

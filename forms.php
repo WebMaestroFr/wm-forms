@@ -19,10 +19,10 @@ class WM_Forms
   {
     $post = get_post( $post_id );
     $fields = wm_get_form_fields( $post_id );
-    $action = get_post_meta( get_the_ID(), 'form_settings', true );
+    $settings = get_post_meta( get_the_ID(), 'form_settings', true );
     foreach ( $fields as $name => $field ) {
       $required = $field['required'] ? 'required' : '';
-      $content = "<p>";
+      $content .= "<p>";
       switch ( $field['type'] )
       {
         case 'checkbox':
@@ -30,20 +30,19 @@ class WM_Forms
         break;
 
         case 'textarea':
-        $content .= "<label for='wm-form-{$name}'>{$field['label']}</label>";
+        $content .= "<label for='wm-form-{$name}'>{$field['label']}</label><br>";
         $content .= "<textarea name='{$name}' {$required} id='wm-form-{$name}'></textarea>";
         break;
 
         case 'radio':
-        $content .= "<fieldset><legend>{$field['label']}</legend>";
+        $content .= "<label>{$field['label']}</label>";
         foreach ( $field['options'] as $k => $label ) {
-          $content .= "<label><input type='radio' name='{$name}' {$required} value='$k'> {$label}</label>";
+          $content .= "<br><label><input type='radio' name='{$name}' {$required} value='$k'> {$label}</label>";
         }
-        $content .= "</fieldset>";
         break;
 
         case 'select':
-        $content .= "<label for='wm-form-{$name}'>{$field['label']}</label>";
+        $content .= "<label for='wm-form-{$name}'>{$field['label']}</label><br>";
         $content .= "<select name='{$name}' {$required} id='wm-form-{$name}'>";
         foreach ( $field['options'] as $k => $label ) {
           $content .= "<option value='$k'>{$label}</option>";
@@ -52,18 +51,18 @@ class WM_Forms
         break;
 
         default:
-        $content .= "<label for='wm-form-{$name}'>{$field['label']}</label>";
+        $content .= "<label for='wm-form-{$name}'>{$field['label']}</label><br>";
         $content .= "<input name='{$name}' {$required} id='wm-form-{$name}' type='{$field['type']}' />";
         break;
       }
       $content .= "</p>";
     }
-    $submit = "<input type='submit' value='{$action['submit']}'>";
-    $form = "<form>";
+    $submit = "<input type='submit' value='{$settings['submit']}'>";
+    $form = "<form class='wm-form'>";
     $form .= wp_nonce_field( $post->post_name, $post->post_name . '_nonce', true, false );
     $form .= "<input type='hidden' name='wm_form_id' value='{$post_id}'>";
     $form .= apply_filters( 'wm_form_fields', $content, $fields );
-    $form .= apply_filters( 'wm_form_submit', $submit, $action['submit'] );
+    $form .= apply_filters( 'wm_form_submit', $submit, $settings['submit'] );
     $form .= "</form>";
     return $form;
   }
