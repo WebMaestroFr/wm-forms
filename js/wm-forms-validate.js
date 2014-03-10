@@ -20,7 +20,7 @@ jQuery(document).ready(function ($) {
         beforeSend: function () {
           spinner.fadeIn('fast');
           submit.hide();
-          $('.failure-message, .success-message').remove();
+          $('.failure, .success').remove();
         },
         complete: function () {
           spinner.hide();
