@@ -119,11 +119,6 @@ class WM_Forms_Plugin
   public static function admin_enqueue_scripts( $hook_suffix )
   {
     if ( get_post_type() === 'form' && ( $hook_suffix === 'post-new.php' || $hook_suffix === 'post.php' ) ) {
-      if ( ! class_exists( WM_Settings ) ) {
-        add_action( 'admin_notices', function () {
-          echo '<div class="error"><p>' . __( 'The plugin <strong>Less Compiler</strong> requires the plugin <strong><a href="https://github.com/WebMaestroFr/wm-settings">WebMaestro Settings</a></strong> in order to display the options pages.', 'wm-forms' ) . '</p></div>';
-        });
-      }
       wp_enqueue_style( 'wm-forms', plugins_url( 'css/wm-forms.css' , __FILE__ ) );
       wp_enqueue_script( 'wm-forms', plugins_url( 'js/wm-forms.js' , __FILE__ ), array( 'jquery', 'jquery-ui-sortable', 'underscore' ) );
     }
