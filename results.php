@@ -8,12 +8,13 @@ class WM_Form_Results
     add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ) );
   }
 
-  public static function parse_value( $form_id, $value )
+  public static function parse_value( $form_id, $data )
   {
-    $fields = json_decode( get_post_meta( $form_id, 'form_fields', true ), true );
-    $value = json_decode( $value, true );
-    foreach ( $fields as $field ) {
-      $v = $value[$field['fid']];
+    $fields = wm_get_form_fields( $form_id );
+    $data = json_decode( $data, true );
+    $value = array();
+    foreach ( $fields as $name => $field ) {
+      $v = $data[$name];
       switch ($field['type'])
       {
         case 'checkbox':
@@ -33,7 +34,7 @@ class WM_Form_Results
           $v = "<a href='{$v}'>{$v}</a>";
         	break;
       }
-      $value[$field['fid']] = array( $field['label'], $v );
+      $value[$name] = array( $field['label'], $v );
     }
     return $value;
   }
@@ -55,7 +56,7 @@ class WM_Form_Results
   { ?>
     <div class="wrap"><?php
       $form_id = self::form_results_selector(); // Print the <select> and return the current form ID
-      $fields = json_decode( get_post_meta( $form_id, 'form_fields', true ), true );
+      $fields = wm_get_form_fields( $form_id );
       $results = wm_get_form_results( $form_id ); ?>
       <h2><?php _e( 'Form Results', 'wm-forms' ); ?></h2>
       <!-- <div class="tablenav top"></div> -->

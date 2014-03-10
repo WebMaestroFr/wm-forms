@@ -24,7 +24,8 @@ function wm_get_form_fields( $form_id ) {
   $meta = json_decode( get_post_meta( $form_id, 'form_fields', true ), true );
   $fields = array();
   foreach ( $meta as $field ) {
-    $fields[$field['fid']] = $field;
+    $name = sanitize_key( "f-{$field['fid']}" );
+    $fields[$name] = $field;
   }
   return $fields;
 }

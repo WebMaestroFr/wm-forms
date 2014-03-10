@@ -75,7 +75,7 @@ class WM_Forms_Validate
     foreach ( $fields as $name => $field ) {
       $input = array_key_exists( $name, $_POST ) ? trim( $_POST[$name] ) : null;
       if ( empty( $input ) ) {
-        if ( $field['required'] && empty( $input ) ) {
+        if ( $field['required'] ) {
           $errors->add( $name, __( 'This field is required.', 'wm-forms' ) );
         }
         continue;
@@ -121,8 +121,7 @@ class WM_Forms_Validate
         $akismet['comment_content'] .= "{$value}\r\n";
         break;
       }
-      $key = sanitize_key( $field['fid'] );
-      $result[$key] = $value;
+      $result[$name] = $value;
     }
     if ( $errors->get_error_code() ) {
       return $errors;
