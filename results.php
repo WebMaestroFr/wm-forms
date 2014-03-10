@@ -8,6 +8,36 @@ class WM_Form_Results
     add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ) );
   }
 
+  public static function parse_value( $form_id, $value )
+  {
+    $fields = json_decode( get_post_meta( $form_id, 'form_fields', true ), true );
+    $value = json_decode( $value, true );
+    foreach ( $fields as $field ) {
+      $v = $value[$field['fid']];
+      switch ($field['type'])
+      {
+        case 'checkbox':
+      		$v = $v ? __( 'Yes', 'wm-forms' ) : __( 'No', 'wm-forms' );
+      		break;
+
+        case 'radio':
+        case 'select':
+          $v = $field['options'][$v];
+        	break;
+
+        case 'email':
+          $v = "<a href='mailto:{$v}'>{$v}</a>";
+        	break;
+
+        case 'url':
+          $v = "<a href='{$v}'>{$v}</a>";
+        	break;
+      }
+      $value[$field['fid']] = array( $field['label'], $v );
+    }
+    return $value;
+  }
+
   public static function admin_enqueue_scripts( $hook_suffix )
   {
     if ( $hook_suffix === 'form_page_results' ) {
@@ -45,28 +75,8 @@ class WM_Form_Results
               <td>
                 <input type="checkbox">
               </td>
-              <?php foreach ( $fields as $field ) {
-                $value = $result->value[$field['fid']];
-                switch ($field['type'])
-                {
-                  case 'checkbox':
-                		$value = $value ? __( 'Yes', 'wm-forms' ) : __( 'No', 'wm-forms' );
-                		break;
-
-                  case 'radio':
-                  case 'select':
-                    $value = $field['options'][$value];
-                  	break;
-
-                  case 'email':
-                    $value = "<a href='mailto:{$value}'>{$value}</a>";
-                  	break;
-
-                  case 'url':
-                    $value = "<a href='{$value}'>{$value}</a>";
-                  	break;
-                }
-                echo "<td>{$value}</td>";
+              <?php foreach ( $result->value as $v ) {
+                echo "<td>{$v[1]}</td>";
               } ?>
             </tr>
           <?php } ?>

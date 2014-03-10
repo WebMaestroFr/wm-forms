@@ -23,7 +23,7 @@ class WM_Forms_Validate
   {
     $form = get_post( $_POST['wm_form_id'] );
     if ( ! $form || get_post_type( $form ) !== 'form' || ! wp_verify_nonce( $_POST[$form->post_name . '_nonce'], $form->post_name ) ) {
-      wp_die( __( 'Security verification failed.', 'wm-forms' ) );
+      wp_send_json( array( 'failure' => __( 'Security verification failed.', 'wm-forms' ) ) );
     }
     $result = self::validate_fields( $form );
     if ( is_wp_error( $result ) ) {
@@ -31,11 +31,35 @@ class WM_Forms_Validate
     } else {
       $settings = get_post_meta( $form->ID, 'form_settings', true );
       $result_id = self::save_result( $form->ID, $result );
-      if ( $settings['send'] && $settings['email'] ) {
-        self::send_email( $result_id, $result, $settings['email'], $form );
+      if ( $result_id && $settings['send'] && $settings['email'] ) {
+        self::send_result( $settings['email'], $form, $result_id );
       }
-      wp_send_json( $result_id );
+      wp_send_json( array( 'success' => __( 'Success !', 'wm-forms' ) ) );
     }
+  }
+
+  private static function save_result( $form_id, $result )
+  {
+    global $wpdb;
+    $wpdb->insert( $wpdb->prefix . 'form_results', array(
+      'form_id' => $form_id,
+      'value' => json_encode( $result )
+    ), array( '%d', '%s' ) );
+    return $wpdb->insert_id;
+  }
+
+  private static function send_result( $email, $form, $result_id )
+  {
+    $result = wm_get_form_result( $result_id );
+    $author_email = get_the_author_meta( 'user_email', $form->post_author );
+		$subject = get_bloginfo( 'name' ) . ' &raquo; ' . $form->post_title;
+		$body = sprintf( __( 'A new submission was recorded for the form "%s" (%s).' ), $form->post_title, get_permalink( $form->ID ) ) . "\r\n\r\n";
+    foreach ( $result->value as $v ) {
+      $value = strip_tags( $v[1] );
+      $body .= "\r\n[{$v[0]}]\r\n{$value}\r\n";
+    }
+		$body .= "\r\n\r\n" . sprintf( __( 'You receive this message since it\'s defined like so in the form settings. If you don\'t want to get these notifications anymore, unsuscribe from %s, or contact the form author (%s).' ), get_edit_post_link( $form->ID ), $author_email );
+		return wp_mail( $email, $subject, $body );
   }
 
   private static function validate_fields( $form )
@@ -50,8 +74,10 @@ class WM_Forms_Validate
     $result = array();
     foreach ( $fields as $name => $field ) {
       $input = array_key_exists( $name, $_POST ) ? trim( $_POST[$name] ) : null;
-      if ( $field['required'] && empty( $input ) ) {
-        $errors->add( $name, __( 'This field is required.', 'wm-forms' ) );
+      if ( empty( $input ) ) {
+        if ( $field['required'] && empty( $input ) ) {
+          $errors->add( $name, __( 'This field is required.', 'wm-forms' ) );
+        }
         continue;
       }
       switch ( $field['type'] )
@@ -101,15 +127,14 @@ class WM_Forms_Validate
     if ( $errors->get_error_code() ) {
       return $errors;
     }
-    if ( ! self::is_spam( $akismet ) ) {
-      $errors->add( 'spam', __( 'Submission interpreted as spam.', 'wm-forms' ) );
-      return $errors;
+    if ( self::is_spam( $akismet ) ) {
+      wp_send_json( array( 'failure' => __( 'Submission interpreted as spam !', 'wm-forms' ) ) );
     }
     return $result;
   }
 
   private static function is_spam( $data ) {
-		if ( function_exists( 'akismet_http_post' ) && get_option( 'wordpress_api_key' ) ) {
+		if ( function_exists( 'akismet_http_post' ) && ( get_option( 'wordpress_api_key' ) || defined('WPCOM_API_KEY') ) ) {
 			global $akismet_api_host, $akismet_api_port;
       $data = array_merge( $data, $_SERVER, array(
         'blog'         => home_url(),
@@ -121,30 +146,9 @@ class WM_Forms_Validate
         'blog_charset' => get_bloginfo( 'charset' )
       ) );
       $response = akismet_http_post( http_build_query( $data ), $akismet_api_host, '/1.1/comment-check', $akismet_api_port );
-      return $response[1];
+      return ( $response[1] === 'true' );
     }
     return false;
-  }
-
-  private static function save_result( $form_id, $result )
-  {
-    global $wpdb;
-    if ( $wpdb->insert( $wpdb->prefix . 'form_results', array(
-      'form_id' => $form_id,
-      'value' => json_encode( $result )
-    ) ) ) {
-      return $wpdb->insert_id;
-    }
-    return false;
-  }
-
-  private static function send_result( $result_id, $result, $email, $form )
-  {
-			$subject = get_bloginfo( 'name' ) . ' &raquo; ' . $form->post_title;
-      foreach ( $result as $k => $v ) {}
-			$body = $message . "\r\n\r\n" . $email;
-			$headers = 'From: ' . get_bloginfo( 'name' ) . ' <'.$email.'>' . "\r\n" . 'Reply-To: ' . $email;
-			return wp_mail( self::$options->recipient, $subject, $body, $headers );
   }
 }
 add_action( 'init', array( WM_Forms_Validate, 'init' ) );

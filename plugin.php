@@ -19,49 +19,34 @@ function wm_get_forms( $args = array() ) {
   return get_posts( array_merge( $args, array( 'post_type' => 'form' ) ) );
 }
 
-function wm_get_form_fields( $post_id ) {
-  $post = get_post( $post_id );
-  $meta = json_decode( get_post_meta( $post_id, 'form_fields', true ), true );
+function wm_get_form_fields( $form_id ) {
+  $form = get_post( $form_id );
+  $meta = json_decode( get_post_meta( $form_id, 'form_fields', true ), true );
   $fields = array();
   foreach ( $meta as $field ) {
-    $fields["{$post->post_name}-{$field['fid']}"] = $field;
+    $fields[$field['fid']] = $field;
   }
   return $fields;
 }
 
-function wm_get_form_results( $post_id ) {
+function wm_get_form_results( $form_id ) {
   global $wpdb;
   $results = $wpdb->get_results(
-    $wpdb->prepare( "SELECT `id`, `value`, `date` FROM `{$wpdb->prefix}form_results` WHERE `form_id` = %d;", $post_id )
+    $wpdb->prepare( "SELECT * FROM `{$wpdb->prefix}form_results` WHERE `form_id` = %d;", $form_id )
   );
-  $fields = json_decode( get_post_meta( $form_id, 'form_fields', true ), true );
   foreach ( $results as $result ) {
-    $result->value = json_decode( $result->value, true );
-    foreach ( $fields as $field ) {
-      $value = $result->value[$field['fid']];
-      switch ($field['type'])
-      {
-        case 'checkbox':
-      		$value = $value ? __( 'Yes', 'wm-forms' ) : __( 'No', 'wm-forms' );
-      		break;
-
-        case 'radio':
-        case 'select':
-          $value = $field['options'][$value];
-        	break;
-
-        case 'email':
-          $value = "<a href='mailto:{$value}'>{$value}</a>";
-        	break;
-
-        case 'url':
-          $value = "<a href='{$value}'>{$value}</a>";
-        	break;
-      }
-      $result->value[$field['fid']] = $value;
-    }
+    $result->value = WM_Form_Results::parse_value( $form_id, $result->value );
   }
   return $results;
+}
+
+function wm_get_form_result( $result_id ) {
+  global $wpdb;
+  $results = $wpdb->get_results(
+    $wpdb->prepare( "SELECT * FROM `{$wpdb->prefix}form_results` WHERE `id` = %d;", $result_id )
+  );
+  $results[0]->value = WM_Form_Results::parse_value( $results[0]->form_id, $results[0]->value );
+  return $results[0];
 }
 
 class WM_Forms_Plugin
