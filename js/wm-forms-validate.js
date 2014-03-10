@@ -22,12 +22,13 @@ jQuery(document).ready(function ($) {
           submit.hide();
           $('.failure, .success').remove();
         },
-        complete: function () {
-          spinner.hide();
-          submit.fadeIn('fast');
-        },
         success: function (data) {
-          console.log(data);
+          if (data.hasOwnProperty('redirect')) {
+            document.location = data.redirect;
+          } else {
+            spinner.hide();
+            submit.fadeIn('fast');
+          }
           if (data.hasOwnProperty('errors')) {
             validator.showErrors(data.errors);
           } else if (data.hasOwnProperty('failure')) {
@@ -35,8 +36,6 @@ jQuery(document).ready(function ($) {
           } else if (data.hasOwnProperty('success')) {
             $('<p>').insertBefore(submit).addClass('success').text(data.success);
             // $(form)[0].reset();
-          } else if (data.hasOwnProperty('redirect')) {
-            document.location = data.redirect;
           }
         },
         error: function (jqXHR, textStatus, errorThrown) {

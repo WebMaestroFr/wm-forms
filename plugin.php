@@ -150,22 +150,36 @@ class WM_Forms_Plugin
     wp_nonce_field( 'wm_form', 'wm_form_nonce' );
     global $current_user;
     get_currentuserinfo();
-    $value = get_post_meta( $post->ID, 'form_settings', true ); ?>
-    <div class="misc-pub-section">
-      <label>
-        <input type="checkbox" <?php checked( isset( $value['send'] ) ); ?> value="1" name="wm_form_settings[send]">
-        <?php _e( 'Send results by email to', 'wm-forms' ); ?>
-      </label>
-      <input type="email" name="wm_form_settings[email]" value="<?php
-        echo ( isset( $value['email'] ) && is_email( $value['email'] ) ) ? $value['email'] : $current_user->user_email;
-      ?>" id="wm-form-settings-email">
-    </div>
-    <div class="misc-pub-section">
-      <label>Submit Text</label>
+    $value = get_post_meta( $post->ID, 'form_settings', true );
+    if ( ! isset( $value['success'] ) ) { $value['success'] = 'message'; }?>
+    <div>
+      <label for="wm-form-settings-submit">Submit text</label>
       <input type="text" name="wm_form_settings[submit]" class="widefat" value="<?php
         echo ( isset( $value['submit'] ) ) ? $value['submit'] : __( 'Submit', 'wm-forms' );
-      ?>">
+      ?>" id="wm-form-settings-submit">
     </div>
+    <fieldset>
+      <legend>On successful submission</legend>
+      <div>
+        <input type="radio" <?php checked( $value['success'], 'message' ); ?> name="wm_form_settings[success]" value="message" id="wm-form-settings-success-message">
+        <label for="wm-form-settings-success-message"><?php _e( 'Display message', 'wm-forms' ); ?></label>
+        <textarea name="wm_form_settings[message]" class="widefat"><?php
+          echo ( isset( $value['message'] ) ) ? $value['message'] : __( 'Submission successful.', 'wm-forms' );
+        ?></textarea>
+        <input type="radio" <?php checked( $value['success'], 'redirect' ); ?> name="wm_form_settings[success]" value="redirect" id="wm-form-settings-success-redirect">
+        <label for="wm-form-settings-success-redirect"><?php _e( 'Redirect to', 'wm-forms' ); ?></label>
+        <input type="url" name="wm_form_settings[redirect]" value="<?php
+          echo ( isset( $value['redirect'] ) && parse_url( $value['redirect'] ) ) ? $value['redirect'] : '';
+        ?>" id="wm-form-settings-redirect">
+      </div>
+      <div>
+        <input type="checkbox" <?php checked( isset( $value['send'] ) ); ?> value="1" name="wm_form_settings[send]">
+        <label><?php _e( 'Send results by email to', 'wm-forms' ); ?></label>
+        <input type="email" name="wm_form_settings[email]" value="<?php
+          echo ( isset( $value['email'] ) && is_email( $value['email'] ) ) ? $value['email'] : $current_user->user_email;
+        ?>" id="wm-form-settings-email">
+      </div>
+    </fieldset>
   <?php }
 
   public static function save_form( $post_id ) {

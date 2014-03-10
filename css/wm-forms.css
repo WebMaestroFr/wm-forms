@@ -101,7 +101,23 @@
   outline: none;
   margin-top: 6px;
 }
-#wm-form-settings-email {
+
+#wm-form-settings legend {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+#wm-form-settings .inside div {
+  margin: 6px 0 8px;
+}
+#wm-form-settings .inside fieldset div {
+  margin-left: 10px;
+}
+#wm-form-settings fieldset label {
+  vertical-align: baseline;
+}
+#wm-form-settings-email,
+#wm-form-settings-redirect {
+  display: inline;
   padding: 1px 3px;
   font-size: 12px;
 }

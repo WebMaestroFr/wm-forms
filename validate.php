@@ -34,7 +34,10 @@ class WM_Forms_Validate
       if ( $result_id && $settings['send'] && $settings['email'] ) {
         self::send_result( $settings['email'], $form, $result_id );
       }
-      wp_send_json( array( 'success' => __( 'Success !', 'wm-forms' ) ) );
+      if ( $settings['success'] === 'redirect' ) {
+        wp_send_json( array( 'redirect' => $settings['redirect'] ) );
+      }
+      wp_send_json( array( 'success' => __( $settings['message'], 'wm-forms' ) ) );
     }
   }
 
