@@ -37,7 +37,10 @@ class WM_Forms_Validate
       if ( $settings['success'] === 'redirect' ) {
         wp_send_json( array( 'redirect' => $settings['redirect'] ) );
       }
-      wp_send_json( array( 'success' => __( $settings['message'], 'wm-forms' ) ) );
+      wp_send_json( array(
+        'success' => __( $settings['message'], 'wm-forms' ),
+        'result_id' => $result_id
+      ) );
     }
   }
 

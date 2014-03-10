@@ -54,8 +54,6 @@ class WM_Forms_Plugin
 {
   public static function init()
   {
-    register_activation_hook( __FILE__, array( __CLASS__, 'activation' ) );
-    register_deactivation_hook( __FILE__, array( __CLASS__, 'deactivation' ) );
     self::register_post_type();
     add_action( 'admin_enqueue_scripts', array( __CLASS__, 'admin_enqueue_scripts' ) );
     add_action( 'save_post', array( __CLASS__, 'save_form' ) );
@@ -66,21 +64,48 @@ class WM_Forms_Plugin
   public static function activation()
   {
     global $wpdb;
-    $wpdb->query( "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}form_results` (
+    if ( is_multisite() ) {
+      $sites = wp_get_sites();
+      foreach ( $sites as $site ) {
+        switch_to_blog( $site['blog_id'] );
+        $wpdb->query( self::get_create_query( $wpdb->prefix ) );
+      }
+      restore_current_blog();
+    } else {
+      $wpdb->query( self::get_create_query( $wpdb->prefix ) );
+    }
+  }
+
+  private static function get_create_query( $prefix )
+  {
+    return "CREATE TABLE IF NOT EXISTS `{$prefix}form_results` (
       `ID`  bigint(20) NOT NULL AUTO_INCREMENT,
       `form_id` bigint(20) NOT NULL,
       `value` longtext,
       `date` datetime DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY `ID` (`ID`),
       KEY `form_id` (`form_id`)
-    );" );
+    );";
   }
 
   public static function deactivation()
   {
     global $wpdb;
-    // TODO : Ask for backup
-    $wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}form_results`;" );
+    if ( is_multisite() ) {
+      $sites = wp_get_sites();
+      foreach ( $sites as $site ) {
+        switch_to_blog( $site['blog_id'] );
+        $wpdb->query( self::get_drop_query( $wpdb->prefix ) );
+      }
+      restore_current_blog();
+    } else {
+      $wpdb->query( self::drop_table( $wpdb->prefix ) );
+    }
+  }
+
+  private static function get_drop_query( $prefix )
+  {
+    return "DROP TABLE IF EXISTS `{$prefix}form_results`;";
   }
 
   public static function register_post_type()
@@ -230,3 +255,5 @@ class WM_Forms_Plugin
   }
 }
 add_action( 'init', array( WM_Forms_Plugin, 'init' ) );
+register_activation_hook( __FILE__, array( WM_Forms_Plugin, 'activation' ) );
+register_deactivation_hook( __FILE__, array( WM_Forms_Plugin, 'deactivation' ) );
