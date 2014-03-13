@@ -8,35 +8,32 @@ class WM_Form_Results
     add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ) );
   }
 
-  public static function parse_value( $form_id, $data )
+  public static function parse( $fields, $result, $html = true )
   {
-    $fields = wm_get_form_fields( $form_id );
-    $data = json_decode( $data, true );
-    $value = array();
     foreach ( $fields as $name => $field ) {
-      $v = $data[$name];
       switch ($field['type'])
       {
         case 'checkbox':
-      		$v = $v ? __( 'Yes', 'wm-forms' ) : __( 'No', 'wm-forms' );
+      		$result[$name] = $result[$name] ? __( 'No', 'wm-forms' ) : __( 'Yes', 'wm-forms' );
       		break;
-
         case 'radio':
         case 'select':
-          $v = $field['options'][$v];
-        	break;
-
-        case 'email':
-          $v = "<a href='mailto:{$v}'>{$v}</a>";
-        	break;
-
-        case 'url':
-          $v = "<a href='{$v}'>{$v}</a>";
+          $result[$name] = $field['options'][$result[$name]];
         	break;
       }
-      $value[$name] = array( $field['label'], $v );
+      if ( $html ) {
+        switch ( $field['type'] )
+        {
+          case 'email':
+            $result[$name] = "<a href='mailto:{$result[$name]}'>{$result[$name]}</a>";
+          	break;
+          case 'url':
+            $result[$name] = "<a href='{$result[$name]}'>{$result[$name]}</a>";
+          	break;
+        }
+      }
     }
-    return $value;
+    return $result;
   }
 
   public static function admin_enqueue_scripts( $hook_suffix )
@@ -56,8 +53,8 @@ class WM_Form_Results
   { ?>
     <div class="wrap"><?php
       $form_id = self::form_results_selector(); // Print the <select> and return the current form ID
-      $fields = wm_get_form_fields( $form_id );
-      $results = wm_get_form_results( $form_id ); ?>
+      $fields = get_form_fields( $form_id );
+      $results = get_form_results( $form_id ); ?>
       <h2><?php _e( 'Form Results', 'wm-forms' ); ?></h2>
       <!-- <div class="tablenav top"></div> -->
       <table class="widefat fixed" cellspacing="0">
@@ -76,8 +73,8 @@ class WM_Form_Results
               <td>
                 <input type="checkbox">
               </td>
-              <?php foreach ( $result->value as $v ) {
-                echo "<td>{$v[1]}</td>";
+              <?php foreach ( $fields as $name => $field ) {
+                echo "<td>{$result[$name]}</td>";
               } ?>
             </tr>
           <?php } ?>
@@ -88,10 +85,7 @@ class WM_Form_Results
 
   private static function form_results_selector()
   {
-    $forms = get_posts( array(
-      'post_type'    => 'form',
-      'numberposts'  => -1
-    ) );
+    $forms = get_forms( array( 'numberposts' => -1 ) );
     echo "<form method='get' class='wm-form-results-selector'>
     <input type='hidden' name='post_type' value='form'>
     <input type='hidden' name='page' value='results'>

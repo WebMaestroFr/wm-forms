@@ -21,8 +21,12 @@ class WM_Forms_Validate
 
   public static function ajax()
   {
-    $form = get_post( $_POST['wm_form_id'] );
-    if ( ! $form || get_post_type( $form ) !== 'form' || ! wp_verify_nonce( $_POST[$form->post_name . '_nonce'], $form->post_name ) ) {
+    $form = get_post( $_POST['form_id'] );
+    if ( ! $form
+      || get_post_type( $form ) !== 'form'
+      || ! isset( $_POST[$form->post_name . '_nonce'] )
+      || ! wp_verify_nonce( $_POST[$form->post_name . '_nonce'], $form->post_name )
+    ) {
       wp_send_json( array( 'failure' => __( 'Security verification failed.', 'wm-forms' ) ) );
     }
     $result = self::validate_fields( $form );
@@ -30,47 +34,20 @@ class WM_Forms_Validate
       wp_send_json( $result );
     } else {
       $settings = get_post_meta( $form->ID, 'form_settings', true );
-      $result_id = self::save_result( $form->ID, $result );
-      if ( $result_id && $settings['send'] && $settings['email'] ) {
-        self::send_result( $settings['email'], $form, $result_id );
+      add_post_meta( $form->ID, 'form_results', $result );
+      if ( $settings['send'] && $settings['email'] ) {
+        self::send_result( $settings['email'], $form, $result );
       }
       if ( $settings['success'] === 'redirect' ) {
         wp_send_json( array( 'redirect' => $settings['redirect'] ) );
       }
-      wp_send_json( array(
-        'success' => __( $settings['message'], 'wm-forms' ),
-        'result_id' => $result_id
-      ) );
+      wp_send_json( array( 'success' => __( $settings['message'], 'wm-forms' ) ) );
     }
-  }
-
-  private static function save_result( $form_id, $result )
-  {
-    global $wpdb;
-    $wpdb->insert( $wpdb->prefix . 'form_results', array(
-      'form_id' => $form_id,
-      'value' => json_encode( $result )
-    ), array( '%d', '%s' ) );
-    return $wpdb->insert_id;
-  }
-
-  private static function send_result( $email, $form, $result_id )
-  {
-    $result = wm_get_form_result( $result_id );
-    $author_email = get_the_author_meta( 'user_email', $form->post_author );
-		$subject = get_bloginfo( 'name' ) . ' &raquo; ' . $form->post_title;
-		$body = sprintf( __( 'A new submission was recorded for the form "%s" (%s).' ), $form->post_title, get_permalink( $form->ID ) ) . "\r\n\r\n";
-    foreach ( $result->value as $v ) {
-      $value = strip_tags( $v[1] );
-      $body .= "\r\n[{$v[0]}]\r\n{$value}\r\n";
-    }
-		$body .= "\r\n\r\n" . sprintf( __( 'You receive this message since it\'s defined like so in the form settings. If you don\'t want to get these notifications anymore, unsuscribe from %s, or contact the form author (%s).' ), get_edit_post_link( $form->ID ), $author_email );
-		return wp_mail( $email, $subject, $body );
   }
 
   private static function validate_fields( $form )
   {
-    $fields = wm_get_form_fields( $form->ID );
+    $fields = get_form_fields( $form->ID );
     $akismet = array(
       'comment_content' => '',
       'permalink' => get_permalink( $form->ID ),
@@ -154,6 +131,20 @@ class WM_Forms_Validate
       return ( $response[1] === 'true' );
     }
     return false;
+  }
+
+  private static function send_result( $email, $form, $result )
+  {
+    $author_email = get_the_author_meta( 'user_email', $form->post_author );
+		$subject = get_bloginfo( 'name' ) . ' &raquo; ' . $form->post_title;
+    $fields = get_form_fields( $form->ID );
+    $result = WM_Form_Results::parse( $fields, $result, false );
+		$body = sprintf( __( 'A new submission was recorded on the form "%s" (%s).' ), $form->post_title, get_permalink( $form->ID ) ) . "\r\n\r\n";
+    foreach ( $fields as $name => $field ) {
+      $body .= "\r\n[{$field['label']}]\r\n{$result[$name]}\r\n";
+    }
+		$body .= "\r\n\r\n" . sprintf( __( 'You receive this message since it is defined like so in the form settings. If you do not want to get these notifications anymore, unsuscribe from %s, or contact the form author (%s).' ), get_edit_post_link( $form->ID ), $author_email );
+		return wp_mail( $email, $subject, $body );
   }
 }
 add_action( 'init', array( WM_Forms_Validate, 'init' ) );

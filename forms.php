@@ -18,51 +18,56 @@ class WM_Forms
   private static function get_form( $post_id )
   {
     $post = get_post( $post_id );
-    $fields = wm_get_form_fields( $post_id );
     $settings = get_post_meta( get_the_ID(), 'form_settings', true );
+    $fields = get_form_fields( $post_id );
+    $fields['form_submit'] = array(
+      'type' => 'submit',
+      'required' => false,
+      'label' => $settings['submit']
+    );
     foreach ( $fields as $name => $field ) {
-      $required = $field['required'] ? 'required' : '';
+      $attrs = "name='{$name}'" . ( $field['required'] ? ' required' : '' );
+      $label = "<label for='form-{$name}'>{$field['label']}</label><br>";
       $content .= "<p>";
       switch ( $field['type'] )
       {
         case 'checkbox':
-        $content .= "<label><input name='{$name}' {$required} type='checkbox' value='1' /> {$field['label']}</label>";
+        $content .= "<label><input {$attrs} type='checkbox' value='1' /> {$field['label']}</label>";
         break;
 
         case 'textarea':
-        $content .= "<label for='wm-form-{$name}'>{$field['label']}</label><br>";
-        $content .= "<textarea name='{$name}' {$required} id='wm-form-{$name}'></textarea>";
+        $content .= $label . "<textarea {$attrs} id='form-{$name}'></textarea>";
         break;
 
         case 'radio':
         $content .= "<label>{$field['label']}</label>";
-        foreach ( $field['options'] as $k => $label ) {
-          $content .= "<br><label><input type='radio' name='{$name}' {$required} value='$k'> {$label}</label>";
+        foreach ( $field['options'] as $k => $opt ) {
+          $content .= "<br><label><input type='radio' {$attrs} value='$k'> {$opt}</label>";
         }
         break;
 
         case 'select':
-        $content .= "<label for='wm-form-{$name}'>{$field['label']}</label><br>";
-        $content .= "<select name='{$name}' {$required} id='wm-form-{$name}'>";
-        foreach ( $field['options'] as $k => $label ) {
-          $content .= "<option value='$k'>{$label}</option>";
+        $content .= $label . "<select {$attrs} id='form-{$name}'>";
+        foreach ( $field['options'] as $k => $opt ) {
+          $content .= "<option value='$k'>{$opt}</option>";
         }
         $content .= "</select>";
         break;
 
+        case 'submit':
+        $content .= "<input type='submit' value='{$field['label']}'>";
+        break;
+
         default:
-        $content .= "<label for='wm-form-{$name}'>{$field['label']}</label><br>";
-        $content .= "<input name='{$name}' {$required} id='wm-form-{$name}' type='{$field['type']}' />";
+        $content .= $label . "<input {$attrs} id='form-{$name}' type='{$field['type']}' />";
         break;
       }
       $content .= "</p>";
     }
-    $submit = "<input type='submit' value='{$settings['submit']}'>";
     $form = "<form class='wm-form'>";
     $form .= wp_nonce_field( $post->post_name, $post->post_name . '_nonce', true, false );
-    $form .= "<input type='hidden' name='wm_form_id' value='{$post_id}'>";
-    $form .= apply_filters( 'wm_form_fields', $content, $fields );
-    $form .= apply_filters( 'wm_form_submit', $submit, $settings['submit'] );
+    $form .= "<input type='hidden' name='form_id' value='{$post_id}'>";
+    $form .= apply_filters( 'form_fields', $content, $fields );
     $form .= "</form>";
     return $form;
   }
