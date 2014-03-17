@@ -11,12 +11,14 @@ class WM_Forms_Validate
 
   public static function enqueue_scripts()
   {
-    wp_enqueue_script( 'jquery-validate', plugins_url( 'js/jquery.validate.min.js' , __FILE__ ), array( 'jquery' ), null, true );
-    wp_enqueue_script( 'wm-forms-validate', plugins_url( 'js/wm-forms-validate.js' , __FILE__ ), array( 'jquery-validate', 'jquery-serialize-object' ), null, true );
-    wp_localize_script( 'wm-forms-validate', 'ajax', array(
-      'url' => admin_url( 'admin-ajax.php' ),
-      'spinner' => admin_url( 'images/spinner.gif')
-    ) );
+    if ( 'form' === get_post_type() ) {
+      wp_register_script( 'jquery-validate', plugins_url( 'js/jquery.validate.min.js' , __FILE__ ), array( 'jquery' ), null, true );
+      wp_enqueue_script( 'wm-forms-validate', plugins_url( 'js/wm-forms-validate.js' , __FILE__ ), array( 'jquery-validate', 'jquery-serialize-object' ), null, true );
+      wp_localize_script( 'wm-forms-validate', 'ajax', array(
+        'url' => admin_url( 'admin-ajax.php' ),
+        'spinner' => admin_url( 'images/spinner.gif')
+      ) );
+    }
   }
 
   public static function ajax()
