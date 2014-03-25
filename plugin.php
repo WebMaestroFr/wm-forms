@@ -2,6 +2,7 @@
 /*
 Plugin Name: WebMaestro Forms
 Plugin URI: http://#
+GitHub Plugin URI: WebMaestroFr/wm-forms
 Author: Etienne Baudry
 Author URI: http://webmaestro.fr
 Description: Forms Post Type Manager
