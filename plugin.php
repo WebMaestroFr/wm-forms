@@ -2,7 +2,6 @@
 /*
 Plugin Name: WebMaestro Forms
 Plugin URI: http://#
-GitHub Plugin URI: WebMaestroFr/wm-forms
 Author: Etienne Baudry
 Author URI: http://webmaestro.fr
 Description: Forms Post Type Manager
@@ -10,6 +9,8 @@ Version: 1.0
 License: GNU General Public License
 License URI: license.txt
 Text Domain: wm-forms
+GitHub Plugin URI: https://github.com/WebMaestroFr/wm-forms
+GitHub Branch: master
 */
 
 include( plugin_dir_path( __FILE__ ) . 'forms.php' );
