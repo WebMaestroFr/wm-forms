@@ -23,7 +23,6 @@ jQuery(document).ready(function ($) {
           $('.failure, .success').remove();
         },
         success: function (data) {
-          console.log(data);
           if (data.hasOwnProperty('redirect')) {
             document.location = data.redirect;
           } else {

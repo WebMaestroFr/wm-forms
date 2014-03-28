@@ -1,0 +1,28 @@
+#forms-select {
+  float: left;
+  margin: 9px 8px 9px 0;
+}
+#form-results .submitted-on {
+  font-size: x-small;
+}
+#form-results th span {
+  float: left;
+  cursor: pointer;
+}
+#form-results th:hover .sorting-indicator,
+.tablesorter-headerDesc .sorting-indicator,
+.tablesorter-headerAsc .sorting-indicator {
+  display: block;
+}
+.tablesorter-headerDesc .sorting-indicator::before {
+  content: '\f140';
+}
+#form-results .trash {
+  display: none;
+}
+#form-results tr:hover .trash{
+  display: inline;
+}
+#form-results tr:hover td {
+  padding: 1em 10px;
+}

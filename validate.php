@@ -12,11 +12,11 @@ class WM_Forms_Validate
   public static function enqueue_scripts()
   {
     if ( 'form' === get_post_type() ) {
-      wp_register_script( 'jquery-validate', plugins_url( 'js/jquery.validate.min.js' , __FILE__ ), array( 'jquery' ), null, true );
-      wp_enqueue_script( 'wm-forms-validate', plugins_url( 'js/wm-forms-validate.js' , __FILE__ ), array( 'jquery-validate', 'jquery-serialize-object' ), null, true );
+      wp_register_script( 'jquery-validate', plugins_url( 'js/vendor/jquery.validate.min.js' , __FILE__ ), array( 'jquery' ), null, true );
+      wp_enqueue_script( 'wm-forms-validate', plugins_url( 'js/validate.js' , __FILE__ ), array( 'jquery-validate', 'jquery-serialize-object' ), null, true );
       wp_localize_script( 'wm-forms-validate', 'ajax', array(
         'url' => admin_url( 'admin-ajax.php' ),
-        'spinner' => admin_url( 'images/spinner.gif')
+        'spinner' => admin_url( 'images/spinner.gif' )
       ) );
     }
   }
@@ -35,8 +35,9 @@ class WM_Forms_Validate
     if ( is_wp_error( $result ) ) {
       wp_send_json( $result );
     } else {
-      $settings = get_post_meta( $form->ID, 'form_settings', true );
+      $result['result_id'] = uniqid();
       add_post_meta( $form->ID, 'form_results', $result );
+      $settings = get_post_meta( $form->ID, 'form_settings', true );
       if ( $settings['send'] && $settings['email'] ) {
         self::send_result( $settings['email'], $form, $result );
       }
@@ -138,14 +139,14 @@ class WM_Forms_Validate
   private static function send_result( $email, $form, $result )
   {
     $author_email = get_the_author_meta( 'user_email', $form->post_author );
-		$subject = get_bloginfo( 'name' ) . ' &raquo; ' . $form->post_title;
+		$subject = get_bloginfo( 'name' ) . ' - ' . $form->post_title;
     $fields = get_form_fields( $form->ID );
     $result = WM_Form_Results::parse( $fields, $result, false );
 		$body = sprintf( __( 'A new submission was recorded on the form "%s" (%s).' ), $form->post_title, get_permalink( $form->ID ) ) . "\r\n\r\n";
     foreach ( $fields as $name => $field ) {
       $body .= "\r\n[{$field['label']}]\r\n{$result[$name]}\r\n";
     }
-		$body .= "\r\n\r\n" . sprintf( __( 'You receive this message since it is defined like so in the form settings. If you do not want to get these notifications anymore, unsuscribe from %s, or contact the form author (%s).' ), get_edit_post_link( $form->ID ), $author_email );
+		$body .= "\r\n\r\n" . sprintf( __( 'You receive this message since it is defined like so in the form settings. If you do not want to get these notifications anymore, unsuscribe from %s, or contact the form author (%s).' ), admin_url( "post.php?post={$form->ID}&action=edit" ), $author_email );
 		return wp_mail( $email, $subject, $body );
   }
 }

@@ -19,7 +19,13 @@ function get_form_results( $form_id, $html = true ) {
   $results = get_post_meta( $form_id, 'form_results' );
   $fields = get_form_fields( $form_id );
   foreach ( $results as $name => $result ) {
+    if ( !isset( $result['result_id'] ) ) {
+      // TODO : REMOVE AFTER UPDATE
+      $prev = $result;
+      $result['result_id'] = uniqid();
+      update_post_meta( $form_id, 'form_results', $result, $prev );
+    }
     $results[$name] = WM_Form_Results::parse( $fields, $result, $html );
   }
-  return $results;
+  return array_reverse( $results );
 }

@@ -39,8 +39,9 @@ class WM_Form_Results
   public static function admin_enqueue_scripts( $hook_suffix )
   {
     if ( $hook_suffix === 'form_page_results' ) {
-      wp_enqueue_style( 'wm-forms-results', plugins_url( 'css/wm-forms-results.css' , __FILE__ ) );
-      wp_enqueue_script( 'wm-forms-results', plugins_url( 'js/wm-forms-results.js' , __FILE__ ), array( 'jquery' ) );
+      wp_enqueue_style( 'wm-forms-results', plugins_url( 'css/results.css' , __FILE__ ) );
+      wp_register_script( 'jquery-tablesorter', plugins_url( 'js/vendor/jquery.tablesorter.min.js' , __FILE__ ), array( 'jquery' ), null, true );
+      wp_enqueue_script( 'wm-forms-results', plugins_url( 'js/results.js' , __FILE__ ), array( 'jquery', 'jquery-tablesorter' ), null, true );
     }
   }
 
@@ -57,28 +58,45 @@ class WM_Form_Results
       $results = get_form_results( $form_id ); ?>
       <h2><?php _e( 'Form Results', 'wm-forms' ); ?></h2>
       <!-- <div class="tablenav top"></div> -->
-      <table class="widefat fixed" cellspacing="0">
+      <table class="widefat fixed" cellspacing="0" id="form-results">
         <thead>
           <tr>
-            <th class="manage-column column-cb check-column">
-              <label class="screen-reader-text" for="select-all">Select All</label>
-              <input id="select-all" type="checkbox">
+            <th class="check-column">
+              <input class="select-all" type="checkbox">
+            </th>
+            <th>
+              <span><?php _e( 'Date', 'wm-forms' ); ?></span>
+              <span class='sorting-indicator'></span>
             </th>
             <?php foreach ( $fields as $field ) {
-              echo "<th scope='col' class='manage-column'>{$field['label']}</th>";
+              echo "<th>
+                <span>{$field['label']}</span>
+                <span class='sorting-indicator'></span>
+              </th>";
             } ?>
           </tr>
-          <?php foreach ( $results as $result ) { ?>
-            <tr>
+        </thead>
+        <tbody>
+          <?php foreach ( $results as $i => $result ) { ?>
+            <tr<?php if ( $i % 2 == 0 ) { echo ' class="alt"'; } ?>>
               <td>
-                <input type="checkbox">
+                <input class="select-result" type="checkbox" name="results[]" value="<?php echo $result['result_id']; ?>">
+              </td>
+              <td>
+                <span class="submitted-on"><?php
+                  $timestamp = hexdec( substr( $result['result_id'], 0, 8 ) );
+                  echo date( 'Y-m-d', $timestamp ) . '<br>' . date( 'H:i:s', $timestamp );
+                ?></span><br>
+                <span class="trash">
+                  <a href="" class="delete" title="<?php _e( 'Delete this result' ); ?>"><?php _e( 'Delete' ); ?></a>
+                </span>
               </td>
               <?php foreach ( $fields as $name => $field ) {
                 echo "<td>{$result[$name]}</td>";
               } ?>
             </tr>
           <?php } ?>
-        </thead>
+        </tbody>
       </table>
     </div>
   <?php }
@@ -86,7 +104,7 @@ class WM_Form_Results
   private static function form_results_selector()
   {
     $forms = get_forms( array( 'numberposts' => -1 ) );
-    echo "<form method='get' class='wm-form-results-selector'>
+    echo "<form method='get' id='forms-select'>
     <input type='hidden' name='post_type' value='form'>
     <input type='hidden' name='page' value='results'>
     <select name='form_id'>";

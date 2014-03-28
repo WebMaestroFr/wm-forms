@@ -5,7 +5,7 @@ Plugin URI: http://#
 Author: Etienne Baudry
 Author URI: http://webmaestro.fr
 Description: Forms Post Type Manager
-Version: 1.0
+Version: 0.2
 License: GNU General Public License
 License URI: license.txt
 Text Domain: wm-forms
@@ -67,8 +67,8 @@ class WM_Forms_Plugin
     if ( get_post_type() === 'form'
       && ( $hook_suffix === 'post-new.php' || $hook_suffix === 'post.php' )
     ) {
-      wp_enqueue_style( 'wm-forms', plugins_url( 'css/wm-forms.css' , __FILE__ ) );
-      wp_enqueue_script( 'wm-forms', plugins_url( 'js/wm-forms.js' , __FILE__ ), array(
+      wp_enqueue_style( 'wm-forms-edit', plugins_url( 'css/edit.css' , __FILE__ ) );
+      wp_enqueue_script( 'wm-forms-edit', plugins_url( 'js/edit.js' , __FILE__ ), array(
         'jquery',
         'jquery-ui-sortable',
         'underscore'
