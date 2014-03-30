@@ -5,7 +5,7 @@ Plugin URI: http://#
 Author: Etienne Baudry
 Author URI: http://webmaestro.fr
 Description: Forms Post Type Manager
-Version: 0.2
+Version: 0.3
 License: GNU General Public License
 License URI: license.txt
 Text Domain: wm-forms
