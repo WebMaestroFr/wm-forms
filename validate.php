@@ -150,4 +150,4 @@ class WM_Forms_Validate
 		return wp_mail( $email, $subject, $body );
   }
 }
-add_action( 'init', array( WM_Forms_Validate, 'init' ) );
+add_action( 'init', array( 'WM_Forms_Validate', 'init' ) );

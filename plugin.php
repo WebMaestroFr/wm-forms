@@ -5,7 +5,7 @@ Plugin URI: http://#
 Author: Etienne Baudry
 Author URI: http://webmaestro.fr
 Description: Forms Post Type Manager
-Version: 0.3
+Version: 0.4
 License: GNU General Public License
 License URI: license.txt
 Text Domain: wm-forms
@@ -174,11 +174,9 @@ class WM_Forms_Plugin
   {
     // Without this, a form as front page would rewrite its base URL...
     // http://wpquestions.com/question/show/id/4112
-    if ( ! $query->query_vars['post_type']
-      && $query->query_vars['page_id']
-    ) {
+    if ( empty( $query->query_vars['post_type'] ) && ! empty( $query->query_vars['page_id'] ) ) {
       $query->query_vars['post_type'] = array( 'page', 'form' );
     }
   }
 }
-add_action( 'init', array( WM_Forms_Plugin, 'init' ) );
+add_action( 'init', array( 'WM_Forms_Plugin', 'init' ) );

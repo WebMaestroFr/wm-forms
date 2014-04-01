@@ -119,4 +119,4 @@ class WM_Form_Results
     return $form_id;
   }
 }
-add_action( 'init', array( WM_Form_Results, 'init' ) );
+add_action( 'init', array( 'WM_Form_Results', 'init' ) );

@@ -25,6 +25,7 @@ class WM_Forms
       'required' => false,
       'label' => $settings['submit']
     );
+    $content = '';
     foreach ( $fields as $name => $field ) {
       $attrs = "name='{$name}'" . ( $field['required'] ? ' required' : '' );
       $label = "<label for='form-{$name}'>{$field['label']}</label><br>";
@@ -72,4 +73,4 @@ class WM_Forms
     return $form;
   }
 }
-add_action( 'init', array( WM_Forms, 'init' ) );
+add_action( 'init', array( 'WM_Forms', 'init' ) );
