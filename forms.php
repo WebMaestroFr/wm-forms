@@ -28,7 +28,7 @@ class WM_Forms
     $content = '';
     foreach ( $fields as $name => $field ) {
       $attrs = "name='{$name}'" . ( $field['required'] ? ' required' : '' );
-      $label = "<label for='form-{$name}'>{$field['label']}</label><br>";
+      $label = "<label for='form-{$name}'>{$field['label']}</label>";
       $content .= "<p>";
       switch ( $field['type'] )
       {
@@ -37,7 +37,7 @@ class WM_Forms
         break;
 
         case 'textarea':
-        $content .= $label . "<textarea {$attrs} id='form-{$name}'></textarea>";
+        $content .= $label . "<textarea {$attrs} id='form-{$name}' placeholder='{$field['label']}'></textarea>";
         break;
 
         case 'radio':
@@ -60,7 +60,7 @@ class WM_Forms
         break;
 
         default:
-        $content .= $label . "<input {$attrs} id='form-{$name}' type='{$field['type']}' />";
+        $content .= $label . "<input {$attrs} id='form-{$name}' type='{$field['type']}' placeholder='{$field['label']}' />";
         break;
       }
       $content .= "</p>";
